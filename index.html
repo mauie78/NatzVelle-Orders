@@ -1,1 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NatzVelle Frozen Products - Order Page</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --card: #ffffff;
+    --border: #e0ddd4;
+    --text: #2c2c2a;
+    --text-secondary: #5f5e5a;
+    --accent: #993c1d;
+    --accent-light: #faece7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 100px;
+  }
+  .header {
+    background: var(--accent);
+    color: white;
+    padding: 24px 16px 20px;
+    text-align: center;
+  }
+  .header h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; }
+  .header p { margin: 0; font-size: 13px; opacity: 0.9; }
+  .wrap { max-width: 600px; margin: 0 auto; padding: 16px; }
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .section h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+  .section .priceNote { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; }
+  .item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .item-row:last-child { border-bottom: none; }
+  .item-info { flex: 1; }
+  .item-name { font-size: 14px; font-weight: 500; }
+  .item-price { font-size: 12px; color: var(--text-secondary); }
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button {
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--accent-light); color: var(--accent); font-size: 16px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .stepper input { width: 32px; text-align: center; border: none; font-size: 14px; font-weight: 600; background: transparent; }
+  label.fieldLabel { display: block; font-size: 13px; font-weight: 500; margin: 0 0 6px; }
+  input[type=text], input[type=tel], input[type=date], select, textarea {
+    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); font-size: 14px; margin-bottom: 14px; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .radioGroup { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .radioGroup label { flex: 1; min-width: 90px; text-align: center; padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; cursor: pointer; background: var(--bg); }
+  .radioGroup input { display: none; }
+  .radioGroup label.checked { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .summary-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+  }
+  .summary-bar .totalLabel { font-size: 12px; color: var(--text-secondary); }
+  .summary-bar .totalAmount { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .summary-bar button { background: var(--accent); color: white; border: none; padding: 12px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .breakdown { font-size: 12px; color: var(--text-secondary); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: none; }
+  .breakdown div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .successMsg { display: none; text-align: center; padding: 40px 20px; }
+  .successMsg h2 { color: var(--accent); }
+  .errorMsg { display: none; background: #fcebeb; color: #791f1f; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .required { color: var(--accent); }
+  .tierBadge { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+  .tierResell { background: #e6f4ea; color: #1e6b3a; }
+  .tierRetail { background: var(--accent-light); color: var(--accent); }
+</style>
+</head>
+<body>
 
+<div class="header">
+  <h1>NatzVelle Frozen Products</h1>
+  <p>Please fill in your order below</p>
+</div>
+
+<div class="wrap" id="formWrap">
+
+  <div class="errorMsg" id="errorMsg"></div>
+
+  <div class="section" style="text-align:center;">
+    <span class="tierBadge" id="tierBadge">Retail pricing — order 10+ packs total para sa Resell price</span>
+  </div>
+
+  <div class="section">
+    <h2>Customer info</h2>
+    <label class="fieldLabel">Facebook Name <span class="required">*</span> <span style="color:var(--text-secondary); font-weight:400;">(para ma message back kayo ni admin)</span></label>
+    <input type="text" id="fbName" required>
+
+    <label class="fieldLabel">Contact Number <span class="required">*</span></label>
+    <input type="tel" id="contactNum" required>
+
+    <label class="fieldLabel">Delivery Address <span class="required">*</span></label>
+    <textarea id="address" required></textarea>
+
+    <label class="fieldLabel">Date Needed <span style="color:var(--text-secondary); font-weight:400;">(if advance order — for admin confirmation)</span></label>
+    <input type="date" id="dateNeeded">
+
+    <label class="fieldLabel">Payment Method <span class="required">*</span></label>
+    <div class="radioGroup" id="paymentGroup">
+      <label><input type="radio" name="payment" value="GCash"><span>GCash</span></label>
+      <label><input type="radio" name="payment" value="Bank Transfer"><span>Bank Transfer</span></label>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Regular Empanada</h2>
+    <p class="priceNote" id="priceNote_regularEmpanada"></p>
+    <div id="regularEmpanada"></div>
+  </div>
+
+  <div class="section">
+    <h2>Special Empanada</h2>
+    <p class="priceNote" id="priceNote_specialEmpanada"></p>
+    <div id="specialEmpanada"></div>
+  </div>
+
+  <div class="section">
+    <h2>Buchi</h2>
+    <p class="priceNote" id="priceNote_buchi"></p>
+    <div id="buchi"></div>
+  </div>
+
+  <div class="section">
+    <h2>Big Siomai (20 pcs/pack)</h2>
+    <p class="priceNote" id="priceNote_bigSiomai"></p>
+    <div id="bigSiomai"></div>
+  </div>
+
+  <div class="section">
+    <h2>Pizza (7 inch)</h2>
+    <p class="priceNote" id="priceNote_pizza7in"></p>
+    <div id="pizza7in"></div>
+  </div>
+
+  <div class="section">
+    <h2>Pizza (10 inch)</h2>
+    <p class="priceNote" id="priceNote_pizza10in"></p>
+    <div id="pizza10in"></div>
+  </div>
+
+  <div class="section">
+    <h2>Other products</h2>
+    <div id="otherProducts"></div>
+  </div>
+
+  <div class="section" id="promoSection" style="display:none;">
+    <h2>🎁 Promo: Free items</h2>
+    <p class="priceNote">Kada 20 packs sa Empanada / Buchi / Big Siomai, may libreng item.</p>
+    <div id="promoDetails"></div>
+  </div>
+
+  <div class="section">
+    <h2>Remarks</h2>
+    <p class="priceNote">Preferred flavor for free items, special instructions, etc. (optional)</p>
+    <textarea id="remarks"></textarea>
+  </div>
+
+  <div class="section">
+    <h2>Order summary</h2>
+    <div id="categorySummary" style="font-size:13px; margin-bottom:8px; display:none;"></div>
+    <div id="breakdown" class="breakdown"></div>
+  </div>
+
+</div>
+
+<div class="successMsg" id="reviewMsg" style="display:none;">
+  <h2>Review your order</h2>
+  <p style="color:var(--text-secondary); font-size:13px;">Paki-check muna kung tama lahat bago i-confirm. Kung may baguhin, pindutin lang "Back to edit."</p>
+  <div style="text-align:left; max-width:560px; margin:16px auto 0; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px;">
+    <div id="reviewDetails" style="font-size:13px;"></div>
+  </div>
+  <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+    <button id="backToEditBtn" style="background:var(--bg); color:var(--text); border:1px solid var(--border);">Back to edit</button>
+    <button id="confirmSubmitBtn">Confirm and submit</button>
+  </div>
+</div>
+
+<div class="successMsg" id="successMsg"></div>
+
+<div class="summary-bar" id="summaryBar">
+  <div>
+    <div class="totalLabel">Total</div>
+    <div class="totalAmount" id="totalAmount">₱0</div>
+  </div>
+  <button id="submitBtn">Submit order</button>
+</div>
+
+<script>
+const CATEGORIES = {
+  regularEmpanada: { label: "Regular Empanada", resell: 120, retail: 160, items: ["Chicken","Ham & Cheese","Pork Asado","Cheesy Beef","Spicy Beef","Cheesy Tuna","Spicy Tuna"] },
+  specialEmpanada: { label: "Special Empanada", resell: 140, retail: 190, items: ["Ube Cheese","Pork Sisig","Peach Mango"] },
+  buchi: { label: "Buchi", resell: 100, retail: 140, items: ["Ube Cheese","Choco","Monggo","Cheese"] },
+  bigSiomai: { label: "Big Siomai", resell: 140, retail: 180, items: ["Pork","Japanese","ChiliCheese"] },
+  pizza7in: { label: "Pizza (7 inch)", resell: 45, retail: 45, items: ["Ham & Cheese","Hawaiian","Beef Mushroom","Pepperoni"] },
+  pizza10in: { label: "Pizza (10 inch)", resell: 75, retail: 75, items: ["Ham & Cheese","Hawaiian","Beef Mushroom","Pepperoni"] }
+};
+
+const OTHER_PRODUCTS = [
+  {name:"Bangus Shanghai (20 pcs/pack)", resell:125, retail:160},
+  {name:"Pork Shanghai (12 pcs/pack)", resell:120, retail:160},
+  {name:"Boneless Bangus (350-450g/pack)", resell:130, retail:180},
+  {name:"Leche Flan", resell:90, retail:135}
+];
+
+const RESELL_MIN_PACKS = 10;
+const state = {};
+
+function makeStepper(containerId, groupKey, name, resell, retail){
+  const id = groupKey + "__" + name.replace(/[^a-zA-Z0-9]/g,"_");
+  state[id] = {qty:0, name, group: groupKey, resell, retail};
+  const row = document.createElement("div");
+  row.className = "item-row";
+  row.innerHTML = `
+    <div class="item-info">
+      <div class="item-name">${name}</div>
+      <div class="item-price" id="price_${id}"></div>
+    </div>
+    <div class="stepper">
+      <button type="button" data-action="minus" data-id="${id}">-</button>
+      <input type="text" inputmode="numeric" value="0" data-id="${id}" readonly>
+      <button type="button" data-action="plus" data-id="${id}">+</button>
+    </div>
+  `;
+  document.getElementById(containerId).appendChild(row);
+}
+
+Object.entries(CATEGORIES).forEach(([key, conf])=>{
+  conf.items.forEach(name => makeStepper(key, key, name, conf.resell, conf.retail));
+  const note = conf.resell === conf.retail
+    ? `₱${conf.resell}/pack`
+    : `₱${conf.resell}/pack (resell) | ₱${conf.retail}/pack (retail) — 10 pcs/pack`;
+  document.getElementById("priceNote_" + key).textContent = note;
+});
+
+OTHER_PRODUCTS.forEach(it => makeStepper("otherProducts", "otherProducts", it.name, it.resell, it.retail));
+
+function getTotalQty(){
+  return Object.values(state).reduce((s,i)=> s + i.qty, 0);
+}
+function getTier(){
+  return getTotalQty() >= RESELL_MIN_PACKS ? "resell" : "retail";
+}
+function getPrice(item, tier){
+  return tier === "resell" ? item.resell : item.retail;
+}
+
+document.body.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button[data-action]");
+  if(!btn) return;
+  const id = btn.getAttribute("data-id");
+  const action = btn.getAttribute("data-action");
+  if(action === "plus") state[id].qty++;
+  if(action === "minus") state[id].qty = Math.max(0, state[id].qty - 1);
+  document.querySelector(`input[data-id="${id}"]`).value = state[id].qty;
+  updateSummary();
+});
+
+document.querySelectorAll('#paymentGroup label').forEach(label=>{
+  label.addEventListener('click', ()=>{
+    document.querySelectorAll('#paymentGroup label').forEach(l=>l.classList.remove('checked'));
+    label.classList.add('checked');
+    label.querySelector('input').checked = true;
+  });
+});
+
+function peso(n){ return "₱" + n.toLocaleString(); }
+
+function getCategoryQty(groupKeys){
+  return Object.values(state).filter(i => groupKeys.includes(i.group)).reduce((s,i)=> s + i.qty, 0);
+}
+
+function computePromos(){
+  const empanadaQty = getCategoryQty(["regularEmpanada","specialEmpanada"]);
+  const buchiQty = getCategoryQty(["buchi"]);
+  const siomaiQty = getCategoryQty(["bigSiomai"]);
+  const pizza7Qty = getCategoryQty(["pizza7in"]);
+  const pizza10Qty = getCategoryQty(["pizza10in"]);
+  return {
+    freeEmpanada: Math.floor(empanadaQty / 20),
+    freeBuchi: Math.floor(buchiQty / 20),
+    freeSiomai: Math.floor(siomaiQty / 20),
+    freePizza7: Math.floor(pizza7Qty / 20),
+    freePizza10: Math.floor(pizza10Qty / 20)
+  };
+}
+
+function renderPromoUI(promos){
+  const section = document.getElementById("promoSection");
+  const details = document.getElementById("promoDetails");
+  const hasAny = promos.freeEmpanada > 0 || promos.freeBuchi > 0 || promos.freeSiomai > 0 || promos.freePizza7 > 0 || promos.freePizza10 > 0;
+  if(!hasAny){ section.style.display = "none"; return; }
+  section.style.display = "block";
+
+  let html = "";
+  if(promos.freeEmpanada > 0) html += `<div style="margin-bottom:6px; font-size:14px; font-weight:600;">🎉 ${promos.freeEmpanada} FREE Regular Empanada (kada 20 packs)</div>`;
+  if(promos.freeBuchi > 0) html += `<div style="margin-bottom:6px; font-size:14px; font-weight:600;">🎉 ${promos.freeBuchi} FREE Buchi (kada 20 packs)</div>`;
+  if(promos.freeSiomai > 0) html += `<div style="margin-bottom:6px; font-size:14px; font-weight:600;">🎉 ${promos.freeSiomai} FREE Big Siomai - Pork (kada 20 packs)</div>`;
+  if(promos.freePizza7 > 0) html += `<div style="margin-bottom:6px; font-size:14px; font-weight:600;">🎉 ${promos.freePizza7} FREE Pizza 7in (kada 20 packs, same size)</div>`;
+  if(promos.freePizza10 > 0) html += `<div style="margin-bottom:6px; font-size:14px; font-weight:600;">🎉 ${promos.freePizza10} FREE Pizza 10in (kada 20 packs, same size)</div>`;
+  html += `<p style="font-size:12px; color:var(--text-secondary); margin:4px 0 0;">Kung may preferred flavor ka para sa free item/s, isulat lang sa Remarks sa baba. Kung wala, bahala na admin depende sa available stock.</p>`;
+  details.innerHTML = html;
+}
+
+function getCategoryLabel(groupKey){
+  const labels = { regularEmpanada: "Regular Empanada", specialEmpanada: "Special Empanada", buchi: "Buchi", bigSiomai: "Big Siomai", pizza7in: "Pizza (7in)", pizza10in: "Pizza (10in)", otherProducts: "Other Products" };
+  return labels[groupKey] || groupKey;
+}
+
+function computeCategorySummary(){
+  const groups = ["regularEmpanada","specialEmpanada","buchi","bigSiomai","pizza7in","pizza10in","otherProducts"];
+  return groups.map(g => {
+    const qty = Object.values(state).filter(i=>i.group===g).reduce((s,i)=>s+i.qty,0);
+    return {group:g, label:getCategoryLabel(g), qty};
+  }).filter(c => c.qty > 0);
+}
+
+function updateTierBadge(tier, totalQty){
+  const badge = document.getElementById("tierBadge");
+  badge.classList.remove("tierResell","tierRetail");
+  if(tier === "resell"){
+    badge.textContent = `Resell pricing applied (${totalQty} packs total)`;
+    badge.classList.add("tierResell");
+  } else {
+    const needed = RESELL_MIN_PACKS - totalQty;
+    badge.textContent = needed > 0
+      ? `Retail pricing (${totalQty}/${RESELL_MIN_PACKS} packs) — ${needed} pack/s pa para sa Resell price`
+      : `Retail pricing — order 10+ packs total para sa Resell price`;
+    badge.classList.add("tierRetail");
+  }
+}
+
+function updateSummary(){
+  const totalQty = getTotalQty();
+  const tier = getTier();
+  updateTierBadge(tier, totalQty);
+
+  let total = 0;
+  const lines = [];
+  Object.entries(state).forEach(([id,item])=>{
+    const price = getPrice(item, tier);
+    const priceLabel = document.getElementById("price_" + id);
+    if(priceLabel) priceLabel.textContent = peso(price) + (tier === "resell" ? " (resell)" : " (retail)");
+    if(item.qty > 0){
+      const sub = item.qty * price;
+      total += sub;
+      lines.push(`<div><span>${item.name} x${item.qty}</span><span>${peso(sub)}</span></div>`);
+    }
+  });
+
+  const promos = computePromos();
+  renderPromoUI(promos);
+
+  if(promos.freeEmpanada > 0) lines.push(`<div style="color:var(--accent);"><span>🎁 FREE Regular Empanada x${promos.freeEmpanada}</span><span>₱0</span></div>`);
+  if(promos.freeBuchi > 0) lines.push(`<div style="color:var(--accent);"><span>🎁 FREE Buchi x${promos.freeBuchi}</span><span>₱0</span></div>`);
+  if(promos.freeSiomai > 0) lines.push(`<div style="color:var(--accent);"><span>🎁 FREE Big Siomai (Pork) x${promos.freeSiomai}</span><span>₱0</span></div>`);
+  if(promos.freePizza7 > 0) lines.push(`<div style="color:var(--accent);"><span>🎁 FREE Pizza 7in x${promos.freePizza7}</span><span>₱0</span></div>`);
+  if(promos.freePizza10 > 0) lines.push(`<div style="color:var(--accent);"><span>🎁 FREE Pizza 10in x${promos.freePizza10}</span><span>₱0</span></div>`);
+
+  document.getElementById("totalAmount").textContent = peso(total);
+
+  const catSummary = computeCategorySummary();
+  const catBox = document.getElementById("categorySummary");
+  if(catSummary.length){
+    catBox.innerHTML = catSummary.map(c => `<div style="display:flex; justify-content:space-between; padding:2px 0; font-weight:600;"><span>${c.label}</span><span>${c.qty} packs</span></div>`).join("")
+      + `<div style="border-top:1px solid var(--border); margin:4px 0; padding-top:4px; display:flex; justify-content:space-between; font-weight:700;"><span>Total Packs (paid)</span><span>${totalQty}</span></div>`;
+    catBox.style.display = "block";
+  } else {
+    catBox.style.display = "none";
+  }
+
+  const breakdown = document.getElementById("breakdown");
+  if(lines.length){
+    breakdown.innerHTML = lines.join("") + `<div style="font-weight:700; border-top:1px solid var(--border); margin-top:6px; padding-top:6px;"><span>Total</span><span>${peso(total)}</span></div>`;
+    breakdown.style.display = "block";
+  } else {
+    breakdown.style.display = "none";
+  }
+}
+updateSummary();
+
+let pendingPayload = null;
+
+document.getElementById("submitBtn").addEventListener("click", ()=>{
+  const errorMsg = document.getElementById("errorMsg");
+  errorMsg.style.display = "none";
+
+  const fbName = document.getElementById("fbName").value.trim();
+  const contactNum = document.getElementById("contactNum").value.trim();
+  const address = document.getElementById("address").value.trim();
+  const payment = document.querySelector('input[name="payment"]:checked');
+  const tier = getTier();
+  const total = Object.values(state).reduce((s,i)=> s + i.qty*getPrice(i,tier), 0);
+
+  if(!fbName || !contactNum || !address || !payment){
+    errorMsg.textContent = "Please fill in Facebook Name, Contact Number, Delivery Address, and Payment Method.";
+    errorMsg.style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+    return;
+  }
+  if(total === 0){
+    errorMsg.textContent = "Please select at least one item.";
+    errorMsg.style.display = "block";
+    window.scrollTo({top:0, behavior:"smooth"});
+    return;
+  }
+
+  const promos = computePromos();
+  const promoItems = [];
+  if(promos.freeEmpanada > 0) promoItems.push({name:"FREE Regular Empanada", qty: promos.freeEmpanada});
+  if(promos.freeBuchi > 0) promoItems.push({name:"FREE Buchi", qty: promos.freeBuchi});
+  if(promos.freeSiomai > 0) promoItems.push({name:"FREE Big Siomai (Pork)", qty: promos.freeSiomai});
+  if(promos.freePizza7 > 0) promoItems.push({name:"FREE Pizza 7in", qty: promos.freePizza7});
+  if(promos.freePizza10 > 0) promoItems.push({name:"FREE Pizza 10in", qty: promos.freePizza10});
+
+  pendingPayload = {
+    fbName, contactNum, address,
+    dateNeeded: document.getElementById("dateNeeded").value,
+    payment: payment.value,
+    remarks: document.getElementById("remarks").value.trim(),
+    total, tier,
+    items: Object.values(state).filter(i=>i.qty>0).map(i=>({name:i.name, qty:i.qty, price:getPrice(i,tier)})),
+    promoItems
+  };
+
+  showReview(pendingPayload);
+});
+
+function showReview(payload){
+  document.getElementById("formWrap").style.display = "none";
+  document.getElementById("summaryBar").style.display = "none";
+  document.getElementById("reviewMsg").style.display = "block";
+
+  const itemLines = payload.items.map(i => `<div style="display:flex; justify-content:space-between; padding:3px 0;"><span>${i.name} x${i.qty}</span><span>${peso(i.qty*i.price)}</span></div>`).join("");
+  const promoLines = payload.promoItems.map(i => `<div style="display:flex; justify-content:space-between; padding:3px 0; color:var(--accent);"><span>🎁 ${i.name} x${i.qty}</span><span>₱0</span></div>`).join("");
+  const catSummary = computeCategorySummary();
+  const catLines = catSummary.map(c => `<div style="display:flex; justify-content:space-between; padding:2px 0; font-weight:600;"><span>${c.label}</span><span>${c.qty} packs</span></div>`).join("");
+
+  document.getElementById("reviewDetails").innerHTML = `
+    <div style="margin-bottom:10px;"><strong>${payload.fbName}</strong><br>${payload.contactNum}<br>${payload.address}</div>
+    <div style="margin-bottom:10px; color:var(--text-secondary);">Date Needed: ${payload.dateNeeded || "Not specified"}<br>Payment: ${payload.payment}<br>Pricing tier: ${payload.tier === "resell" ? "Resell" : "Retail"}</div>
+    <div style="border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:8px;"><div style="font-size:12px; color:var(--text-secondary); text-transform:uppercase; margin-bottom:4px;">Per category</div>${catLines}</div>
+    <div style="border-top:1px solid var(--border); padding-top:8px;">${itemLines}${promoLines}</div>
+    <div style="border-top:1px solid var(--border); margin-top:8px; padding-top:8px; display:flex; justify-content:space-between; font-weight:700;"><span>Total</span><span>${peso(payload.total)}</span></div>
+    ${payload.remarks ? `<div style="margin-top:10px; color:var(--text-secondary);">Remarks: ${payload.remarks}</div>` : ""}
+  `;
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+document.getElementById("backToEditBtn").addEventListener("click", ()=>{
+  document.getElementById("reviewMsg").style.display = "none";
+  document.getElementById("formWrap").style.display = "block";
+  document.getElementById("summaryBar").style.display = "flex";
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxYTfZIUDxNjYKzkwQ7wLF4j0XC3BGPD2nzu0JYNMz4O76yTW77_7iDCc2C7yCjGetl/exec";
+
+document.getElementById("confirmSubmitBtn").addEventListener("click", async ()=>{
+  const payload = pendingPayload;
+  const orderRef = "NTZ-" + Math.floor(1000 + Math.random()*9000);
+  payload.orderRef = orderRef;
+
+  const btn = document.getElementById("confirmSubmitBtn");
+  btn.disabled = true;
+  btn.textContent = "Sending...";
+
+  const catQty = {
+    regularEmpanadaQty: getCategoryQty(["regularEmpanada"]),
+    specialEmpanadaQty: getCategoryQty(["specialEmpanada"]),
+    buchiQty: getCategoryQty(["buchi"]),
+    bigSiomaiQty: getCategoryQty(["bigSiomai"]),
+    pizza7inQty: getCategoryQty(["pizza7in"]),
+    pizza10inQty: getCategoryQty(["pizza10in"]),
+    otherProductsQty: getCategoryQty(["otherProducts"])
+  };
+
+  const sheetPayload = {
+    orderRef,
+    fbName: payload.fbName,
+    contactNum: payload.contactNum,
+    address: payload.address,
+    dateNeeded: payload.dateNeeded,
+    payment: payload.payment,
+    tier: payload.tier === "resell" ? "Resell" : "Retail",
+    ...catQty,
+    itemsDetail: payload.items.map(i => i.name + " x" + i.qty).join(", "),
+    promoItemsText: payload.promoItems.length ? payload.promoItems.map(i => i.name + " x" + i.qty).join(", ") : "",
+    totalPacks: payload.items.reduce((s,i)=>s+i.qty,0) + payload.promoItems.reduce((s,i)=>s+i.qty,0),
+    totalAmount: payload.total,
+    remarks: payload.remarks
+  };
+
+  let sendStatus = "success";
+  try{
+    await fetch(GAS_WEB_APP_URL, {
+      method: "POST",
+      headers: {"Content-Type": "text/plain;charset=utf-8"},
+      body: JSON.stringify(sheetPayload)
+    });
+  }catch(err){
+    console.error("Failed to send order to Sheets:", err);
+    sendStatus = "error";
+  }
+
+  document.getElementById("reviewMsg").style.display = "none";
+  document.getElementById("successMsg").innerHTML = `
+    <h2>Salamat sa order mo!</h2>
+    <p style="font-size:15px; font-weight:600; color:var(--accent);">Order Reference: ${orderRef}</p>
+    <p>Total: ${peso(payload.total)} (${payload.tier === "resell" ? "Resell" : "Retail"} pricing)</p>
+    <p style="color:var(--text-secondary); font-size:13px;">Aabisuhan ka ni admin via Messenger para sa confirmation. Kung may baguhin sa order, i-message lang kami at sabihin ang Order Reference mo.</p>
+    ${sendStatus === "error" ? `<p style="color:#791f1f; font-size:13px; background:#fcebeb; padding:10px; border-radius:8px; max-width:400px; margin:10px auto;">Hindi na-save sa Sheets dahil sa connection issue. Paki-screenshot itong page at i-message sa admin kasama ang Order Reference.</p>` : ""}
+    <div style="text-align:left; max-width:560px; margin:24px auto 0; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px;">
+      <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px; text-transform:uppercase; letter-spacing:0.03em;">Order Summary</p>
+      <div style="overflow-x:auto;"><table id="previewTable" style="width:100%; border-collapse:collapse; font-size:12px;"></table></div>
+    </div>
+  `;
+  document.getElementById("successMsg").style.display = "block";
+  renderPreviewTable(payload);
+});
+
+function renderPreviewTable(payload){
+  const table = document.getElementById("previewTable");
+  const catSummary = computeCategorySummary();
+  const catSummaryText = catSummary.map(c => c.label + ": " + c.qty).join(" | ");
+  const rows = [
+    ["Order Reference", payload.orderRef],
+    ["Timestamp", new Date().toLocaleString("en-PH")],
+    ["Facebook Name", payload.fbName],
+    ["Contact Number", payload.contactNum],
+    ["Delivery Address", payload.address],
+    ["Date Needed", payload.dateNeeded || "(not specified)"],
+    ["Payment Method", payload.payment],
+    ["Pricing Tier", payload.tier === "resell" ? "Resell" : "Retail"],
+    ["Remarks", payload.remarks || "(none)"],
+    ["Items Ordered", payload.items.map(i => i.name + " x" + i.qty).join(", ")],
+    ["Per-Category Subtotal", catSummaryText],
+    ["Free / Promo Items", payload.promoItems.length ? payload.promoItems.map(i => i.name + " x" + i.qty).join(", ") : "(none)"],
+    ["Total Packs", payload.items.reduce((s,i)=>s+i.qty,0) + payload.promoItems.reduce((s,i)=>s+i.qty,0) + " (incl. free items)"],
+    ["Total Amount", peso(payload.total)],
+    ["Order Status", "Pending Confirmation"]
+  ];
+  table.innerHTML = rows.map(r => `
+    <tr>
+      <td style="padding:6px 8px; border:1px solid var(--border); font-weight:600; background:var(--accent-light); white-space:nowrap;">${r[0]}</td>
+      <td style="padding:6px 8px; border:1px solid var(--border);">${r[1]}</td>
+    </tr>
+  `).join("");
+}
+</script>
+</body>
+</html>
