@@ -566,7 +566,7 @@ function renderPreviewTable(payload){
     ["Items Ordered", payload.items.map(i => i.name + " x" + i.qty).join(", ")],
     ["Per-Category Subtotal", catSummaryText],
     ["Free / Promo Items", payload.promoItems.length ? payload.promoItems.map(i => i.name + " x" + i.qty).join(", ") : "(none)"],
-    ["Total Packs", payload.items.reduce((s,i)=>s+i.qty,0) + payload.promoItems.reduce((s,i)=>s+i.qty,0) + " (incl. free items)"],
+    ["Total Packs", (()=>{ const paid = payload.items.reduce((s,i)=>s+i.qty,0); const free = payload.promoItems.reduce((s,i)=>s+i.qty,0); return free > 0 ? (paid+free) + " (" + paid + " paid + " + free + " free)" : String(paid); })()],
     ["Total Amount", peso(payload.total)],
     ["Order Status", "Pending Confirmation"]
   ];
