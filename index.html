@@ -556,52 +556,66 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", async ()=>
   renderPreviewTable(payload);
 
   document.getElementById("saveInvoiceBtn").addEventListener("click", ()=>{
-    const invoiceText = [
-      "================================",
-      "   NATZVELLE FROZEN PRODUCTS",
-      "         ORDER INVOICE",
-      "================================",
-      "",
-      "Order Reference : " + payload.orderRef,
-      "Date            : " + new Date().toLocaleString("en-PH"),
-      "Facebook Name   : " + payload.fbName,
-      "Contact Number  : " + payload.contactNum,
-      "Delivery Address: " + payload.address,
-      "Date Needed     : " + (payload.dateNeeded || "Not specified"),
-      "Payment Method  : " + payload.payment,
-      "Pricing Tier    : " + (payload.tier === "resell" ? "Resell" : "Retail"),
-      "",
-      "--------------------------------",
-      "ITEMS ORDERED",
-      "--------------------------------",
-      ...payload.items.map(i => i.name.padEnd(25) + "x" + i.qty + "  " + peso(i.qty * i.price)),
-      ...(payload.promoItems.length ? ["", "PROMO/FREE ITEMS:", ...payload.promoItems.map(i => "🎁 " + i.name + " x" + i.qty + "  ₱0")] : []),
-      "",
-      "--------------------------------",
-      "TOTAL: " + peso(payload.total),
-      "--------------------------------",
-      "",
-      payload.remarks ? "Remarks: " + payload.remarks : "",
-      "",
-      "================================",
-      "Salamat sa iyong order!",
-      "Aabisuhan ka ni admin via",
-      "Messenger para sa confirmation.",
-      "================================"
-    ].filter(l => l !== undefined).join("\n");
+    const invoiceHTML = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NatzVelle Invoice ${payload.orderRef}</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; color: #2c2c2a; }
+  .header { text-align: center; border-bottom: 2px solid #993c1d; padding-bottom: 12px; margin-bottom: 16px; }
+  .header h2 { color: #993c1d; margin: 0 0 4px; font-size: 18px; }
+  .header p { margin: 0; font-size: 13px; color: #5f5e5a; }
+  .ref { text-align: center; background: #faece7; padding: 8px; border-radius: 8px; margin-bottom: 16px; font-weight: 700; color: #993c1d; font-size: 16px; }
+  .info { font-size: 13px; margin-bottom: 16px; }
+  .info div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #e0ddd4; }
+  .info div span:first-child { color: #5f5e5a; }
+  .items { margin-bottom: 16px; }
+  .items h3 { font-size: 13px; color: #5f5e5a; text-transform: uppercase; margin: 0 0 8px; }
+  .item { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; border-bottom: 1px solid #e0ddd4; }
+  .promo { color: #993c1d; font-size: 13px; padding: 3px 0; }
+  .total { display: flex; justify-content: space-between; font-weight: 700; font-size: 16px; padding: 10px 0; border-top: 2px solid #2c2c2a; margin-top: 8px; }
+  .footer { text-align: center; font-size: 12px; color: #5f5e5a; margin-top: 20px; padding-top: 12px; border-top: 1px solid #e0ddd4; }
+  .save-tip { background: #e6f4ea; color: #1e6b3a; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h2>NatzVelle Frozen Products</h2>
+  <p>Order Invoice</p>
+</div>
+<div class="save-tip">📸 I-screenshot itong page para sa iyong permanent copy.</div>
+<div class="ref">Order Ref: ${payload.orderRef}</div>
+<div class="info">
+  <div><span>Name</span><span>${payload.fbName}</span></div>
+  <div><span>Contact</span><span>${payload.contactNum}</span></div>
+  <div><span>Address</span><span>${payload.address}</span></div>
+  <div><span>Date Needed</span><span>${payload.dateNeeded || "Not specified"}</span></div>
+  <div><span>Payment</span><span>${payload.payment}</span></div>
+  <div><span>Pricing</span><span>${payload.tier === "resell" ? "Resell" : "Retail"}</span></div>
+  ${payload.remarks ? `<div><span>Remarks</span><span>${payload.remarks}</span></div>` : ""}
+</div>
+<div class="items">
+  <h3>Items Ordered</h3>
+  ${payload.items.map(i => `<div class="item"><span>${i.name}</span><span>x${i.qty} — ${peso(i.qty * i.price)}</span></div>`).join("")}
+  ${payload.promoItems.map(i => `<div class="promo">🎁 ${i.name} x${i.qty} — ₱0</div>`).join("")}
+  <div class="total"><span>TOTAL</span><span>${peso(payload.total)}</span></div>
+</div>
+<div class="footer">
+  <p>Salamat sa iyong order!</p>
+  <p>Aabisuhan ka ni admin via Messenger para sa confirmation.</p>
+  <p>Order Reference: <strong>${payload.orderRef}</strong></p>
+</div>
+</body>
+</html>`;
 
-    const blob = new Blob([invoiceText], {type: "text/plain;charset=utf-8"});
+    const blob = new Blob([invoiceHTML], {type: "text/html;charset=utf-8"});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "NatzVelle-Invoice-" + payload.orderRef + ".txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    window.open(url, "_blank");
 
     const btn = document.getElementById("saveInvoiceBtn");
-    btn.textContent = "✅ Na-save na ang Invoice!";
+    btn.textContent = "✅ Bukas na ang Invoice!";
     btn.style.background = "#1e6b3a";
   });
 });
