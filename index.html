@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>NatzVelle Frozen Products - Order Page</title>
 <style>
   :root {
@@ -51,7 +51,9 @@
     background: var(--accent-light); color: var(--accent); font-size: 16px; font-weight: 600;
     cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
   }
-  .stepper input { width: 44px; text-align: center; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-weight: 600; background: var(--bg); padding: 4px 2px; }
+  .stepper input { width: 44px; text-align: center; border: 1px solid var(--border); border-radius: 6px; padding: 4px 2px; font-size: 14px; font-weight: 600; background: var(--bg); }
+  .stepper button, .stepper input { touch-action: manipulation; }
+  * { touch-action: manipulation; }
   label.fieldLabel { display: block; font-size: 13px; font-weight: 500; margin: 0 0 6px; }
   input[type=text], input[type=tel], input[type=date], select, textarea {
     width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
@@ -231,7 +233,7 @@ function makeStepper(containerId, groupKey, name, resell, retail){
     </div>
     <div class="stepper">
       <button type="button" data-action="minus" data-id="${id}">-</button>
-      <input type="text" inputmode="numeric" value="0" data-id="${id}">
+      <input type="text" inputmode="numeric" value="0" data-id="${id}" class="qtyInput">
       <button type="button" data-action="plus" data-id="${id}">+</button>
     </div>
   `;
@@ -270,21 +272,22 @@ document.body.addEventListener("click", (e)=>{
 });
 
 document.body.addEventListener("input", (e)=>{
-  if(e.target.tagName !== "INPUT" || !e.target.hasAttribute("data-id")) return;
-  const id = e.target.getAttribute("data-id");
-  if(!state[id]) return;
-  let val = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10);
-  if(isNaN(val) || val < 0) val = 0;
-  state[id].qty = val;
+  const input = e.target.closest("input.qtyInput");
+  if(!input) return;
+  const id = input.getAttribute("data-id");
+  const cleaned = input.value.replace(/[^0-9]/g, "");
+  const qty = cleaned === "" ? 0 : parseInt(cleaned, 10);
+  state[id].qty = qty;
+  input.value = cleaned;
   updateSummary();
 });
 
-document.body.addEventListener("blur", (e)=>{
-  if(e.target.tagName !== "INPUT" || !e.target.hasAttribute("data-id")) return;
-  const id = e.target.getAttribute("data-id");
-  if(!state[id]) return;
-  e.target.value = state[id].qty;
-}, true);
+document.body.addEventListener("focusout", (e)=>{
+  const input = e.target.closest("input.qtyInput");
+  if(!input) return;
+  const id = input.getAttribute("data-id");
+  input.value = state[id].qty;
+});
 
 document.querySelectorAll('#paymentGroup label').forEach(label=>{
   label.addEventListener('click', ()=>{
@@ -540,13 +543,67 @@ document.getElementById("confirmSubmitBtn").addEventListener("click", async ()=>
     <p>Total: ${peso(payload.total)} (${payload.tier === "resell" ? "Resell" : "Retail"} pricing)</p>
     <p style="color:var(--text-secondary); font-size:13px;">Aabisuhan ka ni admin via Messenger para sa confirmation. Kung may baguhin sa order, i-message lang kami at sabihin ang Order Reference mo.</p>
     ${sendStatus === "error" ? `<p style="color:#791f1f; font-size:13px; background:#fcebeb; padding:10px; border-radius:8px; max-width:400px; margin:10px auto;">Hindi na-save sa Sheets dahil sa connection issue. Paki-screenshot itong page at i-message sa admin kasama ang Order Reference.</p>` : ""}
-    <div style="text-align:left; max-width:560px; margin:24px auto 0; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px;">
+    <div style="margin:16px auto; max-width:560px;">
+      <button id="saveInvoiceBtn" style="width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer;">📥 I-save ang Invoice</button>
+      <p style="font-size:12px; color:var(--text-secondary); margin:6px 0 0; text-align:center;">I-tap para ma-download ang iyong order invoice bilang file — para may permanent copy ka.</p>
+    </div>
+    <div style="text-align:left; max-width:560px; margin:16px auto 0; background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px;">
       <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px; text-transform:uppercase; letter-spacing:0.03em;">Order Summary</p>
       <div style="overflow-x:auto;"><table id="previewTable" style="width:100%; border-collapse:collapse; font-size:12px;"></table></div>
     </div>
   `;
   document.getElementById("successMsg").style.display = "block";
   renderPreviewTable(payload);
+
+  document.getElementById("saveInvoiceBtn").addEventListener("click", ()=>{
+    const invoiceText = [
+      "================================",
+      "   NATZVELLE FROZEN PRODUCTS",
+      "         ORDER INVOICE",
+      "================================",
+      "",
+      "Order Reference : " + payload.orderRef,
+      "Date            : " + new Date().toLocaleString("en-PH"),
+      "Facebook Name   : " + payload.fbName,
+      "Contact Number  : " + payload.contactNum,
+      "Delivery Address: " + payload.address,
+      "Date Needed     : " + (payload.dateNeeded || "Not specified"),
+      "Payment Method  : " + payload.payment,
+      "Pricing Tier    : " + (payload.tier === "resell" ? "Resell" : "Retail"),
+      "",
+      "--------------------------------",
+      "ITEMS ORDERED",
+      "--------------------------------",
+      ...payload.items.map(i => i.name.padEnd(25) + "x" + i.qty + "  " + peso(i.qty * i.price)),
+      ...(payload.promoItems.length ? ["", "PROMO/FREE ITEMS:", ...payload.promoItems.map(i => "🎁 " + i.name + " x" + i.qty + "  ₱0")] : []),
+      "",
+      "--------------------------------",
+      "TOTAL: " + peso(payload.total),
+      "--------------------------------",
+      "",
+      payload.remarks ? "Remarks: " + payload.remarks : "",
+      "",
+      "================================",
+      "Salamat sa iyong order!",
+      "Aabisuhan ka ni admin via",
+      "Messenger para sa confirmation.",
+      "================================"
+    ].filter(l => l !== undefined).join("\n");
+
+    const blob = new Blob([invoiceText], {type: "text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "NatzVelle-Invoice-" + payload.orderRef + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const btn = document.getElementById("saveInvoiceBtn");
+    btn.textContent = "✅ Na-save na ang Invoice!";
+    btn.style.background = "#1e6b3a";
+  });
 });
 
 function renderPreviewTable(payload){
@@ -566,7 +623,7 @@ function renderPreviewTable(payload){
     ["Items Ordered", payload.items.map(i => i.name + " x" + i.qty).join(", ")],
     ["Per-Category Subtotal", catSummaryText],
     ["Free / Promo Items", payload.promoItems.length ? payload.promoItems.map(i => i.name + " x" + i.qty).join(", ") : "(none)"],
-    ["Total Packs", (()=>{ const paid = payload.items.reduce((s,i)=>s+i.qty,0); const free = payload.promoItems.reduce((s,i)=>s+i.qty,0); return free > 0 ? (paid+free) + " (" + paid + " paid + " + free + " free)" : String(paid); })()],
+    ["Total Packs", payload.items.reduce((s,i)=>s+i.qty,0) + payload.promoItems.reduce((s,i)=>s+i.qty,0) + " (incl. free items)"],
     ["Total Amount", peso(payload.total)],
     ["Order Status", "Pending Confirmation"]
   ];
